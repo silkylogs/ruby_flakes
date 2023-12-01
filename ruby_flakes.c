@@ -49,14 +49,21 @@ void rf_Array_init(struct rf_Array *array, void *new_elems, u64 new_elem_length,
 
 /* ----- rf_Memory ----- */
 
-// a pool allocator, maybe?
+/*
+  TODO: implement this as a free list allocator
+  reference: https://www.gingerbill.org/article/2021/11/30/memory-allocation-strategies-005/
+*/
 struct rf_Memory {
 	struct rf_Array memory;
 };
 
+struct rf_Memory_fat_ptr;
+
+/*
 void *rf_Memory_alloc(struct rf_Memory *mem, u64 size);
 b32 rf_Memory_is_ptr_valid(struct rf_Memory *mem);
-void rf_Memory_free(
+void rf_Memory_free(void*);
+*/
 
 /* ----- rf_Memory ----- */
 
