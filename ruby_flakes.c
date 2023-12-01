@@ -15,6 +15,7 @@ if (!(CURR_BOOL)) { \
 (ACCUMULATOR_BOOL) &= (CURR_BOOL);
 
 #define RF_CAST(VARIABLE, CAST_TO) ((CAST_TO) (VARIABLE))
+#define RF_LAZY_ASSERT(EXPR) do { b32 place, holder; RF_CHECK_ASSUMPTION(place, holder, EXPR); } while(0)
 
 /* ----- rf_Array ----- */
 
@@ -217,6 +218,58 @@ struct rf_Memory_FreeListNode *rf_Memory_find_best(
 	return best_node;
 }
 
+void *rf_Memory_free_list_alloc(struct rf_Memory *rf_mem, u64 size, u64 alignment);
+void *rf_Memory_free_list_alloc(struct rf_Memory *rf_mem, u64 size, u64 alignment) {
+	u64 padding, alignment_padding, required_space, remaining;
+	struct rf_Memory_FreeListAllocationHeader *header_ptr;
+	struct rf_Memory_FreeListNode *node, *prev_node;
+
+	padding = 0;
+	prev_node = NULL;
+	node = NULL;
+
+	if (size < sizeof(rf_Memory_FreeListNode))
+		size = sizeof(rf_Memory_FreeListNode);
+	if (alignment < 8)
+		alignment = 8;
+
+	if (rf_mem->policy == RF_MEMORY_PLACEMENT_POLICY_FIND_BEST)
+		node = rf_Memory_find_best(rf_mem, size, alignment, &padding, &prev_node);
+	else
+		node = rf_Memory_find_first(rf_mem, size, alignment, &padding, &prev_node);
+	if (!node) {
+		/* TODO: replace with REAL assert */
+		RF_LAZY_ASSERT(!"Warning: Free list has no free memory");
+		return NULL;
+	}
+
+	alignment_padding = padding - sizeof(rf_Memory_FreeListAllocationHeader);
+	required_space = size + padding;
+	remaining = node->block_size - required_space;
+
+	if (remaining > 0) {
+		rf_Memory_FreeListNode *new_node;
+		new_node = RF_CAST(
+			(RF_CAST(node, char*) + required_space),
+			struct rf_Memory_FreeListNode*);
+		new_node->block_size = rest;
+		rf_Memory_node_insert(&rf_mem->head, node, new_node);
+	}
+	
+	rf_Memory_node_remove(&rf_mem->head, prev_node, node);
+
+	header_ptr = RF_CAST(
+		(RF_CAST(node, char*) + alignment_padding),
+		struct rf_Memory_FreeListAllocationHeader*);
+	header_ptr->block_size = required_space;
+	header_ptr->padding = alignment_padding;
+
+	rf_mem->used += required_space;
+
+	return RF_CAST(
+		(RF_CAST(header_ptr, char*) + sizeof(rf_Memory_FreeListAllocationHeader)),
+		void*);
+}
 
 /* ----- rf_Memory ----- */
 
