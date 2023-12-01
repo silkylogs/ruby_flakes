@@ -4,6 +4,7 @@ int printf(const char *, ...);
 #include <stdint.h>
 #include <stdbool.h>
 typedef uint64_t u64;
+typedef int64_t i64;
 typedef uint32_t b32;
 
 #define RF_CHECK_ASSUMPTION(ACCUMULATOR_BOOL, CURR_BOOL, EXPRESSION) \
@@ -13,6 +14,8 @@ if (!(CURR_BOOL)) { \
 } \
 (ACCUMULATOR_BOOL) &= (CURR_BOOL);
 
+#define RF_CAST(VARIABLE, CAST_TO) ((CAST_TO) (VARIABLE))
+
 /* ----- rf_Array ----- */
 
 struct rf_Array {
@@ -20,6 +23,9 @@ struct rf_Array {
 	u64 elem_len;
 	u64 arr_len;
 };
+
+/* TODO: maybe use ranged pointers to express subarrays? */
+struct rf_Memory_fat_ptr;
 
 b32 rf_Array_check_assumptions(void);
 void rf_Array_init(struct rf_Array *array, void *new_elems, u64 new_elem_length, u64 new_arr_length);
@@ -53,17 +59,164 @@ void rf_Array_init(struct rf_Array *array, void *new_elems, u64 new_elem_length,
   TODO: implement this as a free list allocator
   reference: https://www.gingerbill.org/article/2021/11/30/memory-allocation-strategies-005/
 */
-struct rf_Memory {
-	struct rf_Array memory;
+
+struct rf_Memory_FreeListAllocationHeader {
+	u64 block_size;
+	u64 padding;
 };
 
-struct rf_Memory_fat_ptr;
+struct rf_Memory_FreeListNode {
+	struct rf_Memory_FreeListNode *next;
+	u64 block_size;
+};
 
-/*
-void *rf_Memory_alloc(struct rf_Memory *mem, u64 size);
-b32 rf_Memory_is_ptr_valid(struct rf_Memory *mem);
-void rf_Memory_free(void*);
-*/
+enum rf_Memory_PlacementPolicy {
+	RF_MEMORY_PLACEMENT_POLICY_FIND_FIRST,
+	RF_MEMORY_PLACEMENT_POLICY_FIND_BEST
+};
+
+struct rf_Memory {
+        void *data;
+	i64 used;
+	i64 size;
+
+	struct rf_Memory_FreeListNode *head;
+	enum rf_Memory_PlacementPolicy policy;
+};
+
+void rf_Memory_free_all(struct rf_Memory *rf_mem);
+void rf_Memory_free_all(struct rf_Memory *rf_mem) {
+	struct rf_Memory_FreeListNode *first_node;
+	
+	rf_mem->used = 0;
+	first_node = rf_mem->data;
+	first_node->block_size = rf_mem->size;
+	first_node->next = NULL;
+	rf_mem->head = first_node;
+}
+
+void rf_Memory_init_from_array(struct rf_Memory *rf_mem, void *new_data, i64 new_data_len);
+void rf_Memory_init_from_array(struct rf_Memory *rf_mem, void *new_data, i64 new_data_len) {
+	rf_mem->data = new_data;
+	rf_mem->size = new_data_len;
+	rf_Memory_free_all(rf_mem);
+}
+
+u64 rf_Memory_calculate_padding_with_header(uintptr_t ptr, uintptr_t alignment, u64 header_size);
+u64 rf_Memory_calculate_padding_with_header(uintptr_t ptr, uintptr_t alignment, u64 header_size) {
+	uintptr_t p, a, modulo, padding, needed_space;
+
+	/* assert alignment is power of 2 */
+	if (alignment & 0x1)
+		return 0;
+	
+	p = ptr;
+	a = alignment;
+	modulo = p & (a - 1);
+	
+	padding = 0;
+	needed_space = 0;
+	
+	if (modulo != 0)
+		padding = a - modulo;
+
+	needed_space = header_size;
+
+	if (padding < needed_space) {
+		needed_space -= padding;
+		if (((needed_space & (a - 1)) != 0)) {
+			padding += a * (1 + (needed_space / a));
+		} else {
+			padding += a * (needed_space / a);
+		}
+	}
+
+	return padding;
+}
+
+struct rf_Memory_FreeListNode *rf_Memory_find_first(
+	struct rf_Memory *rf_mem,
+	u64 size,
+	u64 alignment,
+	u64 *arg_padding,
+	struct rf_Memory_FreeListNode **arg_prev_node);
+struct rf_Memory_FreeListNode *rf_Memory_find_first(
+	struct rf_Memory *rf_mem,
+	u64 size,
+	u64 alignment,
+	u64 *arg_padding,
+	struct rf_Memory_FreeListNode **arg_prev_node)
+{
+	/* Iterate the list and find the first free block with enough space */
+	struct rf_Memory_FreeListNode *node, *prev_node;
+	u64 padding, required_space;
+
+	node = rf_mem->head;
+	prev_node = NULL;
+	padding = 0;
+
+	while (node != NULL) {
+		padding = rf_Memory_calculate_padding_with_header(
+			RF_CAST(node, uintptr_t),
+			RF_CAST(alignment, uintptr_t),
+			sizeof(struct rf_Memory_FreeListAllocationHeader));
+		required_space = size + padding;
+		if (node->block_size >= required_space) break;
+		prev_node = node;
+		node = node->next;
+	}
+
+	if (arg_padding) *arg_padding = padding;
+	if (arg_prev_node) *arg_prev_node = prev_node;
+	return node;
+}
+
+struct rf_Memory_FreeListNode *rf_Memory_find_best(
+	struct rf_Memory *rf_mem,
+	u64 size,
+	u64 alignment,
+	u64 *arg_padding,
+	struct rf_Memory_FreeListNode **arg_prev_node);
+struct rf_Memory_FreeListNode *rf_Memory_find_best(
+	struct rf_Memory *rf_mem,
+	u64 size,
+	u64 alignment,
+	u64 *arg_padding,
+	struct rf_Memory_FreeListNode **arg_prev_node)
+{
+	struct rf_Memory_FreeListNode *node, *prev_node, *best_node;
+	u64 smallest_diff, padding, required_space;
+
+	smallest_diff = ~(RF_CAST(0, u64)); /* -1 */
+
+	node = rf_mem->head;
+	prev_node = NULL;
+	best_node = NULL;
+	
+	padding = 0;
+
+	while (node != NULL) {
+		padding = rf_Memory_calculate_padding_with_header(
+			RF_CAST(node, uintptr_t),
+			RF_CAST(alignment, uintptr_t),
+			sizeof(struct rf_Memory_FreeListAllocationHeader));
+		required_space = size + padding;
+		if (
+			node->block_size >= required_space &&
+			/* it.block_size? */
+			(node->block_size - required_space < smallest_diff))
+		{
+			best_node = node;
+		}
+		prev_node = node;
+		node = node->next;
+	}
+
+	if (arg_padding) *arg_padding = padding;
+	if (arg_prev_node) *arg_prev_node = prev_node;
+	return best_node;
+}
+
 
 /* ----- rf_Memory ----- */
 
