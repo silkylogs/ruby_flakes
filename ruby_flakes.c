@@ -4,18 +4,21 @@ int printf(const char *, ...);
 #include <stdint.h>
 #include <stdbool.h>
 typedef uint64_t u64;
-typedef uint32_t b32;
+typedef uint32_t u32;
+typedef uint16_t u16;
+typedef uint8_t u8;
 
 typedef int64_t i64;
+
 typedef size_t usize;
 typedef ssize_t isize;
-
 typedef uintptr_t uintptr;
+typedef u32 b32;
 
 #define RF_CHECK_ASSUMPTION(ACCUMULATOR_BOOL, CURR_BOOL, EXPRESSION) \
 (CURR_BOOL) = (EXPRESSION); \
 if (!(CURR_BOOL)) { \
-	printf("Warning: Assumption failed: %s, line: %d\n", #EXPRESSION, __LINE__); \
+	printf("%s:%d:0: Warning: Expression evals to false: %s\n", __FILE__, __LINE__, #EXPRESSION); \
 } \
 (ACCUMULATOR_BOOL) &= (CURR_BOOL);
 
@@ -70,16 +73,14 @@ void rf_Array_init(struct rf_Array *array, void *new_elems, u64 new_elem_length,
   reference: https://www.gingerbill.org/article/2021/11/30/memory-allocation-strategies-005/
 */
 
-// todo!("Write tests to verify this works");
-
 struct rf_Memory_FreeListAllocationHeader {
-	u64 block_size;
-	u64 padding;
+	usize block_size;
+	usize padding;
 };
 
 struct rf_Memory_FreeListNode {
 	struct rf_Memory_FreeListNode *next;
-	u64 block_size;
+	usize block_size;
 };
 
 enum rf_Memory_PlacementPolicy {
@@ -89,15 +90,12 @@ enum rf_Memory_PlacementPolicy {
 
 struct rf_Memory_FreeList {
         void *data;
-	i64 used;
-	i64 size;
+	usize used;
+        usize size;
 
 	struct rf_Memory_FreeListNode *head;
 	enum rf_Memory_PlacementPolicy policy;
 };
-
-
-
 
 void rf_Memory_free_list_free_all(struct rf_Memory_FreeList *rf_mem);
 void rf_Memory_free_list_free_all(struct rf_Memory_FreeList *rf_mem) {
@@ -176,7 +174,17 @@ struct rf_Memory_FreeListNode *rf_Memory_free_list_find_first(
 			RF_CAST(alignment, uintptr_t),
 			sizeof(struct rf_Memory_FreeListAllocationHeader));
 		required_space = size + padding;
-		if (node->block_size >= required_space) break;
+		
+		if (node->block_size >= required_space) {
+			// i probably shouldnt have copypasted something i have no idea of
+			// todo: create your own
+			printf(
+				"Found node of block size 0x%.8x%.8x\n",
+				*(RF_CAST(&node->block_size, u32*) + 1),
+				*(RF_CAST(&node->block_size, u32*) + 0));
+			break;
+		}
+		
 		prev_node = node;
 		node = node->next;
 	}
@@ -259,7 +267,7 @@ void *rf_Memory_free_list_alloc(struct rf_Memory_FreeList *rf_mem, usize size, u
 		node = rf_Memory_free_list_find_best(rf_mem, size, alignment, &padding, &prev_node);
 	else
 		node = rf_Memory_free_list_find_first(rf_mem, size, alignment, &padding, &prev_node);
-	if (!node) {
+	if (node == NULL) {
 		/* TODO: replace with REAL assert */
 		RF_LAZY_ASSERT(!"Warning: Free list has no free memory");
 		return NULL;
@@ -382,6 +390,83 @@ void rf_Memory_free_list_node_remove(
 	else prev_node->next = del_node->next;
 }
 
+void *malloc(usize size);
+void free(void *mem_block);
+b32 rf_Memory_test(void);
+b32 rf_Memory_test(void) {
+	struct rf_Memory_FreeList test_fl;
+	void *backing_buffer;
+	usize backing_buffer_len;
+
+	/* All tests ok, current test ok */
+	b32 aok = true;
+	b32 cok = true;
+
+	/* Init backing buffer */
+	backing_buffer_len = 0x400;
+	backing_buffer = malloc(backing_buffer_len);
+	RF_CHECK_ASSUMPTION(aok, cok, backing_buffer && "Backing buffer failed");
+	if (!cok) return false;
+	
+	/* Check initialization details */
+	rf_Memory_free_list_init(&test_fl, backing_buffer, backing_buffer_len);
+	RF_CHECK_ASSUMPTION(aok, cok, test_fl.data == backing_buffer);
+	RF_CHECK_ASSUMPTION(aok, cok, test_fl.size == backing_buffer_len);
+	RF_CHECK_ASSUMPTION(aok, cok, test_fl.head == test_fl.data);
+
+	/* Testing wether find_first works */ /*{
+		u8 vbyte, *pbyte;
+		u16 vword, *pword;
+		u32 vdword, *pdword;
+		u64 vqword, *pqword;
+		usize alignment;
+
+		vbyte = 0xaa;
+		vword = 0xbbcc;
+		vdword = 0x11003322;
+		*RF_CAST(&vqword + 0, u32*) = 0x44556677;
+		*RF_CAST(&vqword + 1, u32*) = 0x8899eeff;
+		alignment = 0;
+		
+		test_fl.policy = RF_MEMORY_PLACEMENT_POLICY_FIND_FIRST;
+		
+		pbyte = rf_Memory_free_list_alloc(&test_fl, sizeof vbyte, alignment);
+		*pbyte = vbyte;
+		RF_CHECK_ASSUMPTION(aok, cok, *pbyte == vbyte);
+
+		pword = rf_Memory_free_list_alloc(&test_fl, sizeof vword, alignment);
+		*pword = vword;
+		RF_CHECK_ASSUMPTION(aok, cok, *pword == vword);
+		
+		pdword = rf_Memory_free_list_alloc(&test_fl, sizeof vdword, alignment);
+		*pdword = vdword;
+		RF_CHECK_ASSUMPTION(aok, cok, *pdword == vdword);
+
+		pqword = rf_Memory_free_list_alloc(&test_fl, sizeof vdword, alignment);
+		*pqword = vqword;
+		RF_CHECK_ASSUMPTION(aok, cok, *pqword == vqword);
+	}*/
+
+	/* Testing overcommit */ {
+		usize len;
+		void *should_be_null;
+		
+		len = 0;
+		len = ~len;
+		
+		printf(
+			"requested length: %x%x\n",
+			*(RF_CAST(&len, u32*) + 0),
+			*(RF_CAST(&len, u32*) + 1));
+		
+		should_be_null = rf_Memory_free_list_alloc(&test_fl, len, 0);
+		RF_CHECK_ASSUMPTION(aok, cok, should_be_null == NULL);
+	}
+
+	free(backing_buffer);
+	return aok;
+}
+
 /* ----- rf_Memory ----- */
 
 /* ----- rf_AsciiString ----- */
@@ -413,6 +498,7 @@ b32 rf_AsciiString_check_assumptions(void) {
 
 /* ----- rf_main ----- */
 b32 rf_check_all_assumptions(void);
+b32 rf_run_all_tests(void);
 b32 rf_program_main(void);
 
 b32 rf_check_all_assumptions(void) {
@@ -421,12 +507,16 @@ b32 rf_check_all_assumptions(void) {
 	
 	all_ok = true;
 	curr_ok = true;
-	
-	RF_CHECK_ASSUMPTION(all_ok, curr_ok, rf_Array_check_assumptions());
-	RF_CHECK_ASSUMPTION(all_ok, curr_ok, rf_AsciiString_check_assumptions());
-	
- 	return all_ok;
+
+#define RF_ASS(EXPR) RF_CHECK_ASSUMPTION(all_ok, curr_ok, (EXPR))
+	RF_ASS(rf_Array_check_assumptions());
+	RF_ASS(rf_AsciiString_check_assumptions());
+	RF_ASS(rf_Memory_test());
+#undef RF_ASS
+			    
+ 	return all_ok;		    
 }
+
 
 b32 rf_program_main(void) {
 	/* Main dogma:
@@ -439,7 +529,7 @@ b32 rf_program_main(void) {
 	char text[] = "Goodbye, cruel world!\n";
 	
 	if (!rf_check_all_assumptions()) {
-		puts("Warning: Assumptions are violated\n");
+		puts("Error: Assumption(s) were violated\n");
 		return false;
 	}
 
