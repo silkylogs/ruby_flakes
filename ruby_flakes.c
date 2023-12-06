@@ -11,6 +11,7 @@ typedef uint16_t u16;
 typedef uint8_t u8;
 
 typedef int64_t i64;
+typedef int16_t i16;
 
 typedef size_t usize;
 typedef ssize_t isize;
@@ -131,6 +132,31 @@ b32 rf_program_main(void) {
 		sizeof text[0],
 		sizeof text);
 	puts(RF_CAST(char_array.mem_as_bytes, char *));
+
+	/* Try printing an array of numbers the hard way */
+	{
+		struct rf_Array numbers;
+		u16 mem[0x400], mem_arr_len, mem_elem_len;
+		isize i;
+
+		mem_elem_len = sizeof *mem;
+		mem_arr_len = sizeof mem / mem_elem_len;
+			
+		RF_ARRAY_CHECKED_INIT(&numbers, RF_CAST(mem, u8*), sizeof mem, mem_elem_len, mem_arr_len);
+
+		/* TODO: create an iterator? */
+		for (i = 0; i < numbers.elem_cnt; ++i) {
+			printf("Current i: %d \r\n", (int)i);
+			RF_ARRAY_CHECKED_INDEX_WRITE(numbers, i, u16*, i);
+			/*RF_CAST(numbers.mem_as_bytes, u16*)[i] = i;*/
+		}
+
+		printf("[");
+		for (i = 0; i < numbers.elem_cnt; ++i) {
+			printf(" %u", RF_CAST(numbers.mem_as_bytes, u16*)[i]);
+		}
+		printf(" ]\n");
+	}
 	
 	return true;
 }

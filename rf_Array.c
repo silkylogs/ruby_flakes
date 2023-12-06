@@ -49,22 +49,8 @@ void rf_Array_unchecked_init(
 	rf_arr->elem_cnt = new_elem_count;
 }
 
-void rf_Array_unchecked_index_write(
-	struct rf_Array *rf_arr,
-	u8 *const src_bytes,
-	isize src_length,
-	isize index)
-{
-	isize bytes_to_write, index_start, index_end, i;
-	
-        bytes_to_write = src_length;
-	index_start = src_length * index;
-	index_end = index_start + bytes_to_write;
-	
-	/* rf_Array_copy_bytes(source, source_len, dest, dest_len); */
-	for (i = index_start; i < index_end; ++i)
-		rf_arr->mem_as_bytes[i] = src_bytes[i];
-}
+#define RF_ARRAY_UNCHECKED_INDEX_WRITE(RF_ARR, WHAT, TYPE, IDX)	\
+	RF_CAST((RF_ARR).mem_as_bytes, TYPE)[(IDX)] = (WHAT)
 
 /*void rf_Array_unchecked_index_read()*/
 
@@ -79,24 +65,17 @@ void rf_Array_unchecked_index_write(
 		rf_Array_unchecked_init((RF_ARR_PTR), (NEW_BYTE_ARR), (NEW_ELEM_LEN), (NEW_ELEM_CNT)); \
 	} while(0)
 
-#define RF_ARRAY_CHECKED_INDEX_WRITE(RF_ARR_PTR, SRC_BYTE_PTR, SRC_LEN, IDX) \
-	do {								\
-		RF_ASSERT((RF_ARR_PTR) != NULL);			\
-		RF_ASSERT((SRC_BYTE_PTR) != NULL);			\
-		RF_ASSERT((SRC_LEN) > 0);				\
-		RF_ASSERT((IDX) > 0);					\
-		{							\
-			/* Upper bound index check */			\
-			isize backing_memory_last_idx =			\
-				(RF_ARR_PTR)->elem_len * (RF_ARR_PTR)->elem_cnt - 1; \
-			RF_ASSERT(backing_memory_lat_idx <= (IDX));	\
+/*#define RF_ARRAY_CHECKED_INDEX_WRITE(numbers, u16*, i)*/
+#define RF_ARRAY_CHECKED_INDEX_WRITE(RF_ARR, WHAT, TYPE, IDX) \
+	do {						      \
+		/* Lower bound index check */				\
+		RF_ASSERT((IDX) >= 0);					\
 									\
-			/* On-write memory overflow check */		\
-			isize last_idx_of_last_byte_of_source =	(IDX) + (SRC_LEN); \
-			RF_ASSERT(					\
-				last_idx_of_last_byte_of_source <=	\
-				backing_memory_last_idx);		\
-		}							\
+		/* Upper bound index check */				\
+		RF_ASSERT((IDX) < (RF_ARR).elem_cnt);			\
+									\
+		/* TODO: On-write memory overflow check */		\
+		RF_ARRAY_UNCHECKED_INDEX_WRITE((RF_ARR), (WHAT), TYPE, (IDX)); \
 	} while(0)
 
 #endif
