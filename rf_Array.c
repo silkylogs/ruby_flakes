@@ -1,16 +1,22 @@
-/* ----- rf_Array ----- */
+#ifndef RF_MODULE_ARRAY
+#define RF_MODULE_ARRAY
 
 struct rf_Array {
-	void *elems;
-	u64 elem_len;
-	u64 arr_len;
+	u8 *mem_as_bytes;
+	isize elem_len;
+	isize elem_cnt;
 };
 
 /* TODO: maybe use ranged pointers to express subarrays? */
 struct rf_Memory_fat_ptr;
 
 b32 rf_Array_check_assumptions(void);
-void rf_Array_init(struct rf_Array *array, void *new_elems, u64 new_elem_length, u64 new_arr_length);
+void rf_Array_unchecked_init(
+	struct rf_Array *rf_arr,
+	u8 *new_byte_array,
+	isize new_elem_length,
+	isize new_elem_count);
+/*void rf_Array_unchecked_write(*/
 
 b32 rf_Array_check_assumptions() {
 	b32 all_ok;
@@ -22,15 +28,31 @@ b32 rf_Array_check_assumptions() {
 	
 	/* Type length check */
 	RF_CHECK_ASSUMPTION(all_ok, curr_ok, (sizeof test.elem_len == 8));
-	RF_CHECK_ASSUMPTION(all_ok, curr_ok, (sizeof test.arr_len == 8));
+	RF_CHECK_ASSUMPTION(all_ok, curr_ok, (sizeof test.elem_cnt == 8));
         
 	return all_ok;
 }
 
-void rf_Array_init(struct rf_Array *array, void *new_elems, u64 new_elem_length, u64 new_arr_length) {
-	array->elems = new_elems;
-	array->elem_len = new_elem_length;
-	array->arr_len = new_arr_length;
+void rf_Array_unchecked_init(
+	struct rf_Array *rf_arr,
+	u8 *new_byte_array,
+	isize new_elem_length,
+	isize new_elem_count)
+{
+	rf_arr->mem_as_bytes = new_byte_array;
+	rf_arr->elem_len = new_elem_length;
+	rf_arr->elem_cnt = new_elem_count;
 }
 
-/* ----- rf_Array ----- */
+#define rf_Array_checked_init(RF_ARR, NEW_BYTE_ARR, NEW_BYTE_ARR_LEN, NEW_ELEM_LEN, NEW_ELEM_CNT) \
+	do {								\
+		RF_ASSERT((RF_ARR) != NULL);				\
+		RF_ASSERT((NEW_BYTE_ARR) != NULL);			\
+		RF_ASSERT((NEW_BYTE_ARR_LEN) > 0);			\
+		RF_ASSERT((NEW_ELEM_LEN) > 0);				\
+		RF_ASSERT((NEW_ELEM_CNT) > 0);				\
+		RF_ASSERT((NEW_BYTE_ARR_LEN) <= (NEW_ELEM_LEN) * (NEW_ELEM_CNT)); \
+		rf_Array_unchecked_init((RF_ARR), (NEW_BYTE_ARR), (NEW_ELEM_LEN), (NEW_ELEM_CNT)); \
+	} while(0)
+
+#endif

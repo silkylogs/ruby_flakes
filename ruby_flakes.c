@@ -1,8 +1,10 @@
 int puts(const char *);
 int printf(const char *, ...);
+void exit(int);
 
 #include <stdint.h>
 #include <stdbool.h>
+
 typedef uint64_t u64;
 typedef uint32_t u32;
 typedef uint16_t u16;
@@ -14,6 +16,7 @@ typedef size_t usize;
 typedef ssize_t isize;
 typedef uintptr_t uintptr;
 typedef u32 b32;
+typedef uintptr b64;
 
 #define RF_CHECK_ASSUMPTION(ACCUMULATOR_BOOL, CURR_BOOL, EXPRESSION) \
 (CURR_BOOL) = (EXPRESSION); \
@@ -23,17 +26,13 @@ if (!(CURR_BOOL)) { \
 (ACCUMULATOR_BOOL) &= (CURR_BOOL);
 
 #define RF_CAST(VARIABLE, CAST_TO) ((CAST_TO) (VARIABLE))
-#define RF_LAZY_ASSERT(EXPR) do { \
-		b32 place, holder; \
-		place = holder = 0; \
-		RF_CHECK_ASSUMPTION(place, holder, EXPR); \
-	} while(0)
 
+#include "rf_assert.c"
 #include "rf_Array.c"
 
 /* ----- rf_Memory ----- */
 
-// todo!()
+/* TODO: Recreate memory allocator */
 
 void *malloc(usize size);
 void free(void *mem_block);
@@ -126,12 +125,14 @@ b32 rf_program_main(void) {
 	}
 
 	/* Try printing a string, the hard way */
-	rf_Array_init(
+	rf_Array_checked_init(
 		&char_array,
-		text,
+		RF_CAST(text, u8 *),
+		sizeof text,
 		sizeof text[0],
 		sizeof text);
-	puts(char_array.elems);
+	puts(RF_CAST(char_array.mem_as_bytes, char *));
+	RF_TODO("Test todo");
 	
 	return true;
 }
