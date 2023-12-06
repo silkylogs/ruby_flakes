@@ -132,7 +132,6 @@ b32 rf_program_main(void) {
 		sizeof text[0],
 		sizeof text);
 	puts(RF_CAST(char_array.mem_as_bytes, char *));
-	RF_TODO("Test todo");
 	
 	return true;
 }

@@ -27,8 +27,9 @@ b32 rf_Array_check_assumptions() {
 	curr_ok = true;
 	
 	/* Type length check */
-	RF_CHECK_ASSUMPTION(all_ok, curr_ok, (sizeof test.elem_len == 8));
-	RF_CHECK_ASSUMPTION(all_ok, curr_ok, (sizeof test.elem_cnt == 8));
+	RF_CHECK_ASSUMPTION(all_ok, curr_ok, (sizeof test.elem_len) == 8);
+	RF_CHECK_ASSUMPTION(all_ok, curr_ok, (sizeof test.elem_cnt) == 8);
+	RF_CHECK_ASSUMPTION(all_ok, curr_ok, (sizeof *test.mem_as_bytes) == 1);
         
 	return all_ok;
 }
