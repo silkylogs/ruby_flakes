@@ -108,7 +108,6 @@ b32 rf_check_all_assumptions(void) {
  	return all_ok;		    
 }
 
-
 b32 rf_program_main(void) {
 	/* Main dogma:
 	 * 1. Acquire resources
@@ -125,7 +124,7 @@ b32 rf_program_main(void) {
 	}
 
 	/* Try printing a string, the hard way */
-	rf_Array_checked_init(
+	RF_ARRAY_CHECKED_INIT(
 		&char_array,
 		RF_CAST(text, u8 *),
 		sizeof text,
