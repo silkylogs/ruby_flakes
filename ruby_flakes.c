@@ -147,8 +147,7 @@ b32 rf_program_main(void) {
 		/* TODO: create an iterator? */
 		for (i = 0; i < numbers.elem_cnt; ++i) {
 			printf("Current i: %d \r\n", (int)i);
-			RF_ARRAY_CHECKED_INDEX_WRITE(numbers, i, u16*, i);
-			/*RF_CAST(numbers.mem_as_bytes, u16*)[i] = i;*/
+			RF_ARRAY_CHECKED_INDEX_ACCESS(numbers, u16*, i) = i;
 		}
 
 		printf("[");

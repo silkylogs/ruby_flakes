@@ -49,10 +49,16 @@ void rf_Array_unchecked_init(
 	rf_arr->elem_cnt = new_elem_count;
 }
 
-#define RF_ARRAY_UNCHECKED_INDEX_WRITE(RF_ARR, WHAT, TYPE, IDX)	\
-	RF_CAST((RF_ARR).mem_as_bytes, TYPE)[(IDX)] = (WHAT)
+#define RF_ARRAY_UNCHECKED_INDEX_ACCESS(RF_ARR, TYPE_PTR, IDX) 	\
+	  RF_CAST((RF_ARR).mem_as_bytes, TYPE_PTR)[(IDX)]
 
-/*void rf_Array_unchecked_index_read()*/
+#define RF_ARRAY_CHECKED_INDEX_ACCESS(RF_ARR, TYPE_PTR, IDX)		\
+	/* Index bound checks */					\
+	RF_ASSERT((IDX) >= 0);						\
+	RF_ASSERT((IDX) < (RF_ARR).elem_cnt);				\
+									\
+	RF_ARRAY_UNCHECKED_INDEX_ACCESS(RF_ARR, TYPE_PTR, IDX)
+	
 
 #define RF_ARRAY_CHECKED_INIT(RF_ARR_PTR, NEW_BYTE_ARR, NEW_BYTE_ARR_LEN, NEW_ELEM_LEN, NEW_ELEM_CNT) \
 	do {								\
@@ -65,17 +71,5 @@ void rf_Array_unchecked_init(
 		rf_Array_unchecked_init((RF_ARR_PTR), (NEW_BYTE_ARR), (NEW_ELEM_LEN), (NEW_ELEM_CNT)); \
 	} while(0)
 
-/*#define RF_ARRAY_CHECKED_INDEX_WRITE(numbers, u16*, i)*/
-#define RF_ARRAY_CHECKED_INDEX_WRITE(RF_ARR, WHAT, TYPE, IDX) \
-	do {						      \
-		/* Lower bound index check */				\
-		RF_ASSERT((IDX) >= 0);					\
-									\
-		/* Upper bound index check */				\
-		RF_ASSERT((IDX) < (RF_ARR).elem_cnt);			\
-									\
-		/* TODO: On-write memory overflow check */		\
-		RF_ARRAY_UNCHECKED_INDEX_WRITE((RF_ARR), (WHAT), TYPE, (IDX)); \
-	} while(0)
 
 #endif
