@@ -59,15 +59,23 @@ void rf_Array_unchecked_init(
 		rf_Array_unchecked_init((RF_ARR_PTR), (NEW_BYTE_ARR), (NEW_ELEM_LEN), (NEW_ELEM_CNT)); \
 	} while(0)
 
-#define RF_ARRAY_UNCHECKED_INDEX_ACCESS(RF_ARR, TYPE_PTR, IDX) 	\
-	  RF_CAST((RF_ARR).mem_as_bytes, TYPE_PTR)[(IDX)]
+#define RF_ARRAY_UNCHECKED_INDEX_ACCESS(RF_ARR, TYPE, IDX) 	\
+	  RF_CAST((RF_ARR).mem_as_bytes, TYPE*)[(IDX)]
 
-#define RF_ARRAY_CHECKED_INDEX_ACCESS(RF_ARR, TYPE_PTR, IDX)		\
+
+#define RF_ARRAY_CHECK_INDEX_ACCESS(RF_ARR, TYPE, IDX)			\
 	/* Index bound checks */					\
 	RF_ASSERT((IDX) >= 0);						\
 	RF_ASSERT((IDX) < (RF_ARR).elem_cnt);				\
 									\
-	RF_ARRAY_UNCHECKED_INDEX_ACCESS(RF_ARR, TYPE_PTR, IDX)
+	/* Write overflow check						\
+	 * Note:							\
+	 * I do not care that the write *might* be valid.		\
+	 * This is to ensure that the write WILL be valid, even if that	\
+	 * means i'm wasting memory if elem_len < sizeof T		\
+	 */								\
+	RF_ASSERT( (RF_ARR).elem_len == sizeof(TYPE) );			
+
 
 
 #endif
