@@ -55,7 +55,7 @@ void rf_Array_unchecked_init(
 	RF_ASSERT((NEW_ELEM_LEN) > 0);					\
 	RF_ASSERT((NEW_ELEM_CNT) > 0);					\
 	RF_ASSERT((NEW_BYTE_ARR_LEN) <= (NEW_ELEM_LEN) * (NEW_ELEM_CNT)); \
-	rf_Array_unchecked_init((RF_ARR_PTR), (NEW_BYTE_ARR), (NEW_ELEM_LEN), (NEW_ELEM_CNT)); \
+	rf_Array_unchecked_init((RF_ARR_PTR), (NEW_BYTE_ARR), (NEW_ELEM_LEN), (NEW_ELEM_CNT));
 
 #define RF_ARRAY_UNCHECKED_INDEX_ACCESS(RF_ARR, TYPE, IDX) 	\
 	  RF_CAST((RF_ARR).mem_as_bytes, TYPE*)[(IDX)]

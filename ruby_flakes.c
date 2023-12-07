@@ -1,6 +1,4 @@
-int puts(const char *);
-int printf(const char *, ...);
-void exit(int);
+/* ----- Helpful typedefs ----- */
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -19,6 +17,16 @@ typedef uintptr_t uintptr;
 typedef u32 b32;
 typedef uintptr b64;
 
+/* ----- Helpful typedefs ----- */
+
+/* ------ Placeholder cstdlib functions ----- */
+int puts(const char *);
+int printf(const char *, ...);
+void *malloc(usize size);
+void free(void *mem_block);
+void exit(int);
+/* ------ Placeholder cstdlib functions ----- */
+
 #define RF_CHECK_ASSUMPTION(ACCUMULATOR_BOOL, CURR_BOOL, EXPRESSION) \
 (CURR_BOOL) = (EXPRESSION); \
 if (!(CURR_BOOL)) { \
@@ -30,36 +38,7 @@ if (!(CURR_BOOL)) { \
 
 #include "rf_assert.c"
 #include "rf_Array.c"
-
-/* ----- rf_Memory ----- */
-
-/* TODO: Recreate memory allocator */
-
-void *malloc(usize size);
-void free(void *mem_block);
-b32 rf_Memory_test(void);
-b32 rf_Memory_test(void) {
-	void *backing_buffer;
-	usize backing_buffer_len;
-
-	/* All tests ok, current test ok */
-	b32 aok = true;
-	b32 cok = true;
-
-	/* Init backing buffer */
-	backing_buffer_len = 0x400;
-	backing_buffer = malloc(backing_buffer_len);
-	RF_CHECK_ASSUMPTION(aok, cok, backing_buffer && "Backing buffer failed");
-	if (!cok) return false;
-
-	/* Testing overcommit */ {
-	}
-
-	free(backing_buffer);
-	return aok;
-}
-
-/* ----- rf_Memory ----- */
+#include "rf_Memory.c"
 
 /* ----- rf_AsciiString ----- */
 
