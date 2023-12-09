@@ -61,19 +61,64 @@ void rf_Array_unchecked_init(
 	  RF_CAST((RF_ARR).mem_as_bytes, TYPE*)[(IDX)]
 
 
-#define RF_ARRAY_CHECK_INDEX_ACCESS(RF_ARR, TYPE, IDX)			\
-	/* Index bound checks */					\
-	RF_ASSERT((IDX) >= 0);						\
-	RF_ASSERT((IDX) < (RF_ARR).elem_cnt);				\
-									\
-	/* Write overflow check						\
-	 * Note:							\
-	 * I do not care that the write *might* be valid.		\
-	 * This is to ensure that the write WILL be valid, even if that	\
-	 * means i'm wasting memory if elem_len < sizeof T		\
-	 */								\
-	RF_ASSERT( (RF_ARR).elem_len == sizeof(TYPE) );			
+#if 0
+// TODO: turn this into something that can be used as a value, for example, a function
+// replace the "check" into an "assert" because thats what its doing
+#endif
+b32 rf_Array_check_index_access(
+	/* Real arguments */
+	struct rf_Array rf_arr, usize type_size, isize index,
 
+	/* Macro args */
+	const char *filename, isize line,
+	const char *index_expression, const char *type_name,
+	const char *rf_arr_expression);
+b32 rf_Array_check_index_access(
+	/* Real arguments */
+	struct rf_Array rf_arr, usize type_size, isize index,
 
+	/* Macro args */
+	const char *filename, isize line,
+	const char *index_expression, const char *type_name,
+	const char *rf_arr_expression)
+{
+	isize upper_bound = rf_arr.elem_cnt;
+	usize element_len = RF_CAST(rf_arr.elem_len, usize);
+
+	if (!(index >= 0 && index < upper_bound)) {
+		printf("%s:%d:0: Warning:"
+		       "index expression (%s) eval-ing to %d is outside of bounds [0, %d]\n",
+		       filename, RF_CAST(line, i32),
+		       index_expression, RF_CAST(index, i32),
+		       RF_CAST(upper_bound, i32));
+		return false;
+	}
+	
+	/* Write overflow check				
+	 * Note:							
+	 * I do not care that the write *might* be valid.		
+	 * This is to ensure that the write WILL be valid, even if that	
+	 * means i'm wasting memory if elem_len < sizeof T		
+	 */
+	if (!(element_len == type_size)) {
+		printf("%s:%d:0: Warning: "
+		       "size of type provided (sizeof %s == %d) != "
+		       "size specified by expression (\"%s\" == %d)\n",
+		       filename, RF_CAST(line, i32),
+		       type_name, RF_CAST(type_size, i32),
+		       rf_arr_expression, RF_CAST(rf_arr.elem_len, i32));
+		return false;
+	}
+	
+	return true;
+}
+
+#define RF_ARRAY_CHECK_INDEX_ACCESS(RF_ARR, TYPE, IDX)		\
+	rf_Array_check_index_access(				\
+		(RF_ARR), sizeof(TYPE), (IDX),			\
+		__FILE__, __LINE__, #IDX, #TYPE, #RF_ARR)
+
+#define RF_ARRAY_ASSERT_INDEX_ACCESS(RF_ARR, TYPE, IDX)			\
+	RF_ASSERT(RF_ARRAY_CHECK_INDEX_ACCESS(RF_ARR, TYPE, IDX))
 
 #endif
