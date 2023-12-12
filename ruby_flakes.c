@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 
 typedef uint64_t u64;
 typedef uint32_t u32;
@@ -26,6 +27,7 @@ int printf(const char *, ...);
 void *malloc(usize size);
 void free(void *mem_block);
 void exit(int);
+void *__cdecl memcpy(void *__restrict__ dest, const void *__restrict__ source, usize size);
 /* ------ Placeholder cstdlib functions ----- */
 
 #define RF_TEST(ACCUMULATOR_BOOL, CURR_BOOL, EXPRESSION) \
@@ -53,20 +55,20 @@ b32 rf_run_all_tests(void) {
 	
 	all_ok = true;
 	curr_ok = true;
-
+	
 	printf("\n\n"
 	       "Running all tests now\n"
-	       "Please don't panic if you see warning or error messages within this region\n"
+	       "Please don't panic if you see warning messages within this region\n"
 	       "---------------------------------------------------------------------------\n");
-#define RF_RT(EXPR) RF_TEST(all_ok, curr_ok, (EXPR))
-	RF_RT(rf_Array_test());
-	RF_RT(rf_AsciiString_test());
-	RF_RT(rf_Memory_test());
-#undef RF_RT
+	
+	RF_TEST(all_ok, curr_ok, rf_Array_test());
+	RF_TEST(all_ok, curr_ok, rf_AsciiString_test());
+	RF_TEST(all_ok, curr_ok, rf_Memory_test());
+	
 	printf("---------------------------------------------------------------------------\n"
-	       "Test is over, start panicking\n"
+	       "Tests are over, start panicking\n"
 	       "\n\n");
-			    
+
  	return all_ok;		    
 }
 
