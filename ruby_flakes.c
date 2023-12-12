@@ -28,10 +28,10 @@ void free(void *mem_block);
 void exit(int);
 /* ------ Placeholder cstdlib functions ----- */
 
-#define RF_CHECK_ASSUMPTION(ACCUMULATOR_BOOL, CURR_BOOL, EXPRESSION) \
+#define RF_TEST(ACCUMULATOR_BOOL, CURR_BOOL, EXPRESSION) \
 (CURR_BOOL) = (EXPRESSION); \
 if (!(CURR_BOOL)) { \
-	printf("%s:%d:0: Warning: Expression evals to false: %s\n", __FILE__, __LINE__, #EXPRESSION); \
+	printf("%s:%d:0: Error: Test failed: %s\n", __FILE__, __LINE__, #EXPRESSION); \
 } \
 (ACCUMULATOR_BOOL) &= (CURR_BOOL);
 
@@ -49,10 +49,10 @@ struct rf_AsciiString {
 	u64 capacity;
 };
 
-b32 rf_AsciiString_check_assumptions(void);
+b32 rf_AsciiString_test(void);
 void rf_AsciiString_from_const_cstr(struct rf_AsciiString *astr, char *const cstr, u64 cstr_len);
 
-b32 rf_AsciiString_check_assumptions(void) {
+b32 rf_AsciiString_test(void) {
 	struct rf_AsciiString test;
 	b32 all_ok;
 	b32 curr_ok;
@@ -61,7 +61,7 @@ b32 rf_AsciiString_check_assumptions(void) {
 	curr_ok = true;	
 	
 	/* Elements must be one byte long */
-	RF_CHECK_ASSUMPTION(all_ok, curr_ok, (sizeof *test.chars == 1));
+	RF_TEST(all_ok, curr_ok, (sizeof *test.chars == 1));
 
 	return all_ok;
 }
@@ -69,22 +69,22 @@ b32 rf_AsciiString_check_assumptions(void) {
 /* ----- rf_AsciiString ----- */
 
 /* ----- rf_main ----- */
-b32 rf_check_all_assumptions(void);
+b32 rf_run_all_tests(void);
 b32 rf_run_all_tests(void);
 b32 rf_program_main(void);
 
-b32 rf_check_all_assumptions(void) {
+b32 rf_run_all_tests(void) {
 	b32 all_ok;
 	b32 curr_ok;
 	
 	all_ok = true;
 	curr_ok = true;
 
-#define RF_ASS(EXPR) RF_CHECK_ASSUMPTION(all_ok, curr_ok, (EXPR))
-	RF_ASS(rf_Array_check_assumptions());
-	RF_ASS(rf_AsciiString_check_assumptions());
-	RF_ASS(rf_Memory_test());
-#undef RF_ASS
+#define RF_RT(EXPR) RF_TEST(all_ok, curr_ok, (EXPR))
+	RF_RT(rf_Array_test());
+	RF_RT(rf_AsciiString_test());
+	RF_RT(rf_Memory_test());
+#undef RF_RT
 			    
  	return all_ok;		    
 }
@@ -95,135 +95,13 @@ b32 rf_program_main(void) {
 	 * 2. Use resources in game loop
 	 * 3. Free resources and return
 	 */
+
 	
-	if (!rf_check_all_assumptions()) {
-		puts("Error: Assumption(s) were violated\n");
+	
+	if (!rf_run_all_tests()) {
+		printf("Error: One or more tests failed\n");
 		return false;
 	}
-
-	/* Try printing an array of numbers the hard way */
-	{
-		struct rf_Array numbers;
-		u16 mem[16], mem_arr_len, mem_elem_len;
-		isize i;
-
-		mem_elem_len = sizeof *mem;
-		mem_arr_len = sizeof mem / mem_elem_len;
-			
-		RF_ARRAY_CHECKED_INIT(&numbers, RF_CAST(mem, u8*), sizeof mem, mem_elem_len, mem_arr_len);
-
-		/* TODO: create an iterator? */
-		for (i = 0; i < numbers.elem_cnt; ++i) {
-			RF_ARRAY_ASSERT_INDEX_ACCESS(numbers, u16, i);
-			RF_ARRAY_UNCHECKED_INDEX_ACCESS(numbers, u16, i) = i;
-		}
-
-		printf("[");
-		for (i = 0; i < numbers.elem_cnt; ++i) {
-			RF_ARRAY_ASSERT_INDEX_ACCESS(numbers, u16, i);
-			printf(" %u", RF_ARRAY_UNCHECKED_INDEX_ACCESS(numbers, u16, i));
-		}
-		printf(" ]\n");
-	}
-
-	/*
-	 * Try doing some basic memory management, the hard way
-	 * TODO: abstract functionality based on difficulties encountered while implementing
-	 */
-	{		
-		struct Vehicle {
-			long seats;
-			u8 wheels;
-			float horsepower;
-		} truck, car, bus;
-
-		struct {
-			struct rf_Array database;
-			u8 *backing_memory;
-			isize backing_memory_len;
-			isize capacity;
-		} vehicle_database;
-		int i;
-
-		i = 0;
-		vehicle_database.capacity = 2;
-		vehicle_database.backing_memory_len = sizeof (struct Vehicle) * vehicle_database.capacity;
-		vehicle_database.backing_memory = malloc(vehicle_database.backing_memory_len);
-		
-		RF_ARRAY_CHECKED_INIT(
-			&vehicle_database.database,
-			vehicle_database.backing_memory,
-			RF_CAST(vehicle_database.backing_memory_len, usize),
-			sizeof (struct Vehicle),
-			vehicle_database.capacity);
-
-		(truck).seats = 4;	
-		(truck).wheels = 4;	
-		(truck).horsepower = 353.4;		
-		if(RF_ARRAY_CHECK_INDEX_ACCESS(vehicle_database.database, struct Vehicle, i)) {
-			RF_ARRAY_UNCHECKED_INDEX_ACCESS(		
-				vehicle_database.database,		
-				struct Vehicle,				
-				i) = (truck);				
-			printf("[Add] Vehicle:%16.16s\tDetails: {%.3ld seats, %.2d wheels, %4.4f hp}\n",
-			       "truck",			
-			       (truck).seats,			
-			       RF_CAST((truck).wheels, int),	
-			       (truck).horsepower);		
-			i++;					
-		}
-
-		(bus).seats = 23;
-		(bus).wheels = 6;	
-		(bus).horsepower = 600;		
-		if(RF_ARRAY_CHECK_INDEX_ACCESS(vehicle_database.database, struct Vehicle, i)) {
-			RF_ARRAY_UNCHECKED_INDEX_ACCESS(		
-				vehicle_database.database,		
-				struct Vehicle,				
-				i) = (bus);				
-			printf("[Add] Vehicle:%16.16s\tDetails: {%.3ld seats, %.2d wheels, %4.4f hp}\n",
-			       "bus",			
-			       (bus).seats,			
-			       RF_CAST((bus).wheels, int),	
-			       (bus).horsepower);		
-			i++;					
-		}
-
-		(car).seats = 2;	
-		(car).wheels = 4;	
-		(car).horsepower = 540;		
-		if(RF_ARRAY_CHECK_INDEX_ACCESS(vehicle_database.database, struct Vehicle, i)) {
-			RF_ARRAY_UNCHECKED_INDEX_ACCESS(		
-				vehicle_database.database,		
-				struct Vehicle,				
-				i) = (car);				
-			printf("[Add] Vehicle:%16.16s\tDetails: {%.3ld seats, %.2d wheels, %4.4f hp}\n",
-			       "car",			
-			       (car).seats,			
-			       RF_CAST((car).wheels, int),	
-			       (car).horsepower);		
-			i++;					
-		}		
-		
-		free(vehicle_database.backing_memory);
-	}
-	
-#if 0
-	/*
-	 * Try printing a string, the hard way
-	 */
-	{
-		struct rf_Array char_array;
-		char text[] = "Goodbye, cruel world!\n";
-		RF_ARRAY_CHECKED_INIT(
-			&char_array,
-			RF_CAST(text, u8 *),
-			sizeof text,
-			sizeof text[0],
-			sizeof text);
-		puts(RF_CAST(char_array.mem_as_bytes, char *));
-	}
-#endif
 	
 	return true;
 }

@@ -13,7 +13,7 @@ struct rf_Array {
  */
 struct rf_Memory_fat_ptr;
 
-b32 rf_Array_check_assumptions(void);
+b32 rf_Array_test(void);
 void rf_Array_unchecked_init(
 	struct rf_Array *rf_arr,
 	u8 *new_byte_array,
@@ -21,7 +21,7 @@ void rf_Array_unchecked_init(
 	isize new_elem_count);
 
 
-b32 rf_Array_check_assumptions() {
+b32 rf_Array_test() {
 	b32 all_ok;
 	b32 curr_ok;
 	struct rf_Array test;
@@ -30,9 +30,9 @@ b32 rf_Array_check_assumptions() {
 	curr_ok = true;
 	
 	/* Type length check */
-	RF_CHECK_ASSUMPTION(all_ok, curr_ok, (sizeof test.elem_len) == 8);
-	RF_CHECK_ASSUMPTION(all_ok, curr_ok, (sizeof test.elem_cnt) == 8);
-	RF_CHECK_ASSUMPTION(all_ok, curr_ok, (sizeof *test.mem_as_bytes) == 1);
+	RF_TEST(all_ok, curr_ok, (sizeof test.elem_len) == 8);
+	RF_TEST(all_ok, curr_ok, (sizeof test.elem_cnt) == 8);
+	RF_TEST(all_ok, curr_ok, (sizeof *test.mem_as_bytes) == 1);
         
 	return all_ok;
 }
