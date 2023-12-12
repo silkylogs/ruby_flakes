@@ -54,11 +54,18 @@ b32 rf_run_all_tests(void) {
 	all_ok = true;
 	curr_ok = true;
 
+	printf("\n\n"
+	       "Running all tests now\n"
+	       "Please don't panic if you see warning or error messages within this region\n"
+	       "---------------------------------------------------------------------------\n");
 #define RF_RT(EXPR) RF_TEST(all_ok, curr_ok, (EXPR))
 	RF_RT(rf_Array_test());
 	RF_RT(rf_AsciiString_test());
 	RF_RT(rf_Memory_test());
 #undef RF_RT
+	printf("---------------------------------------------------------------------------\n"
+	       "Test is over, start panicking\n"
+	       "\n\n");
 			    
  	return all_ok;		    
 }
@@ -70,8 +77,6 @@ b32 rf_program_main(void) {
 	 * 3. Free resources and return
 	 */
 
-	
-	
 	if (!rf_run_all_tests()) {
 		printf("Error: One or more tests failed\n");
 		return false;
@@ -85,7 +90,7 @@ b32 rf_program_main(void) {
 int main(void) {
 	b32 retval;
 	retval = rf_program_main();
-       	puts("Exiting program\n");
+       	printf("Program exited normally\n");
 
 	/* Converting true/false value into proper return value */
 	retval = (retval == true)? 0 : retval;
