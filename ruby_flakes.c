@@ -37,7 +37,7 @@ if (!(CURR_BOOL)) { \
 
 #define RF_CAST(VARIABLE, CAST_TO) ((CAST_TO) (VARIABLE))
 
-#include "rf_assert.c"
+#include "rf_Assert.c"
 #include "rf_Array.c"
 #include "rf_AsciiString.c"
 #include "rf_Memory.c"
