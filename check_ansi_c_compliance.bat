@@ -16,4 +16,4 @@ set warning_flags=	^
 
 set flags=-ansi -pedantic -O0 -g -Werror 
 
-gcc.exe %warning_flags% %flags% ruby_flakes.c -o ruby_flakes.exe
+gcc.exe %warning_flags% %flags% src\ruby_flakes.c 
