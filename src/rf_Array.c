@@ -61,10 +61,6 @@ void rf_Array_unchecked_init(
 	  RF_CAST((RF_ARR).mem_as_bytes, TYPE*)[(IDX)]
 
 
-#if 0
-// TODO: turn this into something that can be used as a value, for example, a function
-// replace the "check" into an "assert" because thats what its doing
-#endif
 b32 rf_Array_check_index_access(
 	/* Real arguments */
 	struct rf_Array rf_arr, usize type_size, isize index,
