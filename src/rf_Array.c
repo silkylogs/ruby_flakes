@@ -21,7 +21,7 @@ void rf_Array_unchecked_init(
 	isize new_elem_count);
 
 
-b32 rf_Array_test() {
+b32 rf_Array_test(void) {
 	b32 all_ok;
 	b32 curr_ok;
 	struct rf_Array test;

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <string.h>
+/*#include <string.h>*/
 
 /* ----- Helpful typedefs ----- */
 typedef unsigned int u32;
@@ -17,12 +17,14 @@ typedef signed long int isize;
 typedef u32 b32;
 /* ----- Helpful typedefs ----- */
 
-#define RF_TEST(ACCUMULATOR_BOOL, CURR_BOOL, EXPRESSION) \
-(CURR_BOOL) = (EXPRESSION); \
-if (!(CURR_BOOL)) { \
-	printf("%s:%d:0: Error: Test failed: %s\n", __FILE__, __LINE__, #EXPRESSION); \
-} \
-(ACCUMULATOR_BOOL) &= (CURR_BOOL);
+#define RF_TEST(ACCUMULATOR_BOOL, CURR_BOOL, EXPRESSION)		\
+	(CURR_BOOL) = (EXPRESSION);					\
+	if (!(CURR_BOOL)) {						\
+	printf(								\
+		"%s:%d:0: Error: Test failed: %s\n",			\
+		__FILE__, RF_CAST(__LINE__, i32), #EXPRESSION);		\
+	}								\
+	(ACCUMULATOR_BOOL) &= (CURR_BOOL);
 
 #define RF_CAST(VARIABLE, CAST_TO) ((CAST_TO) (VARIABLE))
 
@@ -37,11 +39,8 @@ b32 rf_run_all_tests(void);
 b32 rf_program_main(void);
 
 b32 rf_run_all_tests(void) {
-	b32 all_ok;
-	b32 curr_ok;
-	
-	all_ok = true;
-	curr_ok = true;
+	b32 all_ok = true;
+	b32 curr_ok = true;
 	
 	printf("\n\n"
 	       "Running all tests now\n"
