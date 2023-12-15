@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-/*#include <string.h>*/
+
+#define SDL_MAIN_HANDLED
+#include "../external_includes/SDL2/SDL.h"
 
 /* ----- Helpful typedefs ----- */
 typedef unsigned int u32;
@@ -65,21 +67,45 @@ b32 rf_program_main(void) {
 	 * 3. Free resources and return
 	 */
 
+	SDL_Window *window;
+	SDL_GLContext context;
+	SDL_Event event;
+	b32 running;
+
 	if (!rf_run_all_tests()) {
 		printf("Error: One or more tests failed\n");
 		return false;
 	}
+
+	/* Testing SDL */
+	SDL_Init(SDL_INIT_VIDEO);
+	window = SDL_CreateWindow(
+		"Test",
+		SDL_WINDOWPOS_CENTERED,
+		SDL_WINDOWPOS_CENTERED,
+		400, 400, SDL_WINDOW_SHOWN);
+
+	SDL_Delay(1000);	
+	SDL_DestroyWindow(window);
+	SDL_Quit();
 	
 	return true;
 }
 
 /* ----- rf_main ----- */
 
-int main(void) {
+void rf_use_argc_and_argv(int argc, char **argv);
+void rf_use_argc_and_argv(int argc, char **argv){
+	printf("Argument count: %d, args[0] = %s\n", argc, argv[0]); 
+}
+
+int main(int argc, char **args) {
 	b32 retval;
 	retval = rf_program_main();
        	printf("Program exited normally\n");
 
+	rf_use_argc_and_argv(argc, args);
+	
 	/* Converting true/false value into proper return value */
 	retval = (retval == true)? 0 : retval;
 	return retval;

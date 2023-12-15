@@ -2,4 +2,6 @@
 bin
 obj
 *.sln
-*.Vcxproj
+*.vcxproj
+external_includes
+external_libs

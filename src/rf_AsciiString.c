@@ -140,7 +140,7 @@ b32 rf_AsciiString_copy_cstr_check(
 		return false;
 	}
 
-	RF_TODO("Add a null terminator check");
+	/*RF_TODO("Add a null terminator check");*/
 	return true;
 }
 
