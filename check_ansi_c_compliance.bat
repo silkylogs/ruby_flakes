@@ -14,6 +14,6 @@ set warning_flags=	^
 -Wsuggest-attribute=format	^
 -Wformat-nonliteral
 
-set flags=-ansi -pedantic -O0 -g -Werror 
+set flags=-ansi -pedantic -O0 -g -Werror -fsyntax-only
 
-gcc.exe %warning_flags% %flags% src\ruby_flakes.c 
+gcc.exe %warning_flags% %flags% ruby_flakes.c 

@@ -1,25 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
 
-
 /* ----- Helpful typedefs ----- */
-typedef uint64_t u64;
-typedef uint32_t u32;
-typedef uint16_t u16;
-typedef uint8_t u8;
+typedef unsigned int u32;
+typedef unsigned short u16;
+typedef unsigned char u8;
 
-typedef int64_t i64;
-typedef int32_t i32;
-typedef int16_t i16;
+typedef signed int i32;
+typedef signed short i16;
+typedef signed char i8;
 
-typedef size_t usize;
-typedef signed long long int isize;
-typedef uintptr_t uintptr;
+typedef unsigned long int usize;
+typedef signed long int isize;
 typedef u32 b32;
-typedef uintptr b64;
 /* ----- Helpful typedefs ----- */
 
 #define RF_TEST(ACCUMULATOR_BOOL, CURR_BOOL, EXPRESSION) \

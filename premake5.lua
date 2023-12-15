@@ -8,7 +8,8 @@ project "ruby_flakes"
 	targetdir "bin/%{cfg.buildcfg}"
 
 	files { "src/ruby_flakes.c" }
-	prebuildcommands { 'check_ansi_c_compliance.bat' }
+	-- Note: Check ansi c compliance locally
+	--prebuildcommands { 'check_ansi_c_compliance.bat' }
 
 	filter "configurations:Debug"
 	       defines { "DEBUG" }

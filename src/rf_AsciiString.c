@@ -3,8 +3,8 @@
 
 struct rf_AsciiString {
 	char *chars;
-	i64 str_len;
-	i64 capacity;
+	isize str_len;
+	isize capacity;
 };
 
 b32 rf_AsciiString_test(void);

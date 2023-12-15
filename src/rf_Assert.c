@@ -2,12 +2,12 @@
 #define RF_MODULE_ASSERT
 
 void rf_assert(
-	b64 expr,
+	b32 expr,
 	const char *src_filename,
 	u32 line_number,
 	const char *expr_str);
 void rf_assert(
-	b64 expr,
+	b32 expr,
 	const char *src_filename,
 	u32 line_number,
 	const char *expr_str)

@@ -30,8 +30,8 @@ b32 rf_Array_test() {
 	curr_ok = true;
 	
 	/* Type length check */
-	RF_TEST(all_ok, curr_ok, (sizeof test.elem_len) == 8);
-	RF_TEST(all_ok, curr_ok, (sizeof test.elem_cnt) == 8);
+	RF_TEST(all_ok, curr_ok, (sizeof test.elem_len) == 4);
+	RF_TEST(all_ok, curr_ok, (sizeof test.elem_cnt) == 4);
 	RF_TEST(all_ok, curr_ok, (sizeof *test.mem_as_bytes) == 1);
         
 	return all_ok;
