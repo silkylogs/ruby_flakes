@@ -43,6 +43,8 @@ b32 rf_program_main(void);
 b32 rf_run_all_tests(void) {
 	b32 all_ok = true;
 	b32 curr_ok = true;
+
+	RF_TODO("Clean up the build system");
 	
 	printf("\n\n"
 	       "Running all tests now\n"
